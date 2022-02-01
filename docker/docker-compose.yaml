@@ -1,0 +1,85 @@
+version: "3.9"
+
+networks:
+  mynetwork:
+    name: mynetwork
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.110.0/28
+
+services:
+
+  php:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    container_name: php
+    environment:
+      PHP_IDE_CONFIG: serverName=php
+      XDEBUG_CONFIG: "client_host=192.168.110.1 client_port=9003 remote_enable=1"
+      PHP_INI_SCAN_DIR: "/usr/local/etc/php/custom.d:/usr/local/etc/php/conf.d"
+    restart: unless-stopped
+    working_dir: /var/www/symfony-test
+    volumes:
+      - ./../project:/var/www/symfony-test/project
+      - ./php/php.ini:/usr/local/etc/php/custom.d/php.ini
+    user: "${UID}:${GID}"
+    networks:
+      mynetwork:
+        ipv4_address: 192.168.110.2
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    links:
+      - php
+    volumes:
+      - ./../project:/var/www/symfony-test/project
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      mynetwork:
+        ipv4_address: 192.168.110.3
+
+  database:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    command: --default-authentication-plugin=mysql_native_password
+    container_name: database
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASS}"
+      MYSQL_USER: "${MYSQL_USER}"
+      MYSQL_PASSWORD: "${MYSQL_PASS}"
+      MYSQL_DATABASE: "${MYSQL_DB}"
+    volumes:
+      - ./database/mysql:/var/lib/mysql
+    user: "${UID}:${GID}"
+    networks:
+      mynetwork:
+        ipv4_address: 192.168.110.4
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    links:
+      - database
+    environment:
+      PMA_HOST: database
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    restart: always
+    ports:
+      - 8081:80
+    networks:
+      mynetwork:
+        ipv4_address: 192.168.110.5
