@@ -20,3 +20,30 @@ docker-compose ps
 6) Создал методы для создания и получения данных
 7) UNIT-test
 8) Локализация контента
+
+
+Для создания автора:
+/author/create?name=Автор123456
+
+Поиск автора:
+/author/search?name=Автор123456
+
+Создание книги:
+/ru/book/create?name=Новая книга&author=Автор123456
+
+Поиск:
+/ru/book/search?name=Новая книга
+/ru/book/1
+
+
+Не забудье накатить миграции:
+из контейнера php
+docker exec -u root -t -i php /bin/bash
+cd project
+php bin/console doctrine:migrations:migrate
+
+Чтобы запустить тесты:
+php ./vendor/bin/phpunit
+
+
+Это не финальная версия. Функционал работает, но код нужно привести в порядок.
