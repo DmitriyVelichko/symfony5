@@ -9,6 +9,8 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity(repositoryClass=AuthorRepository::class)
+ * @ORM\Table(name="author")
+ * @ORM\HasLifecycleCallbacks()
  */
 class Author
 {
@@ -25,7 +27,7 @@ class Author
     private $name;
 
     /**
-     * @ORM\ManyToMany(targetEntity=Book::class, mappedBy="author_id")
+     * @ORM\ManyToMany(targetEntity="Book", mappedBy="authors")
      */
     private $books;
 
@@ -58,23 +60,19 @@ class Author
     {
         return $this->books;
     }
-
     public function addBook(Book $book): self
     {
         if (!$this->books->contains($book)) {
             $this->books[] = $book;
-            $book->addAuthorId($this);
+            $book->addAuthor($this);
         }
-
         return $this;
     }
-
     public function removeBook(Book $book): self
     {
         if ($this->books->removeElement($book)) {
-            $book->removeAuthorId($this);
+            $book->removeAuthor($this);
         }
-
         return $this;
     }
 }

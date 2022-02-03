@@ -3,6 +3,7 @@ namespace App\Controller;
 
 use App\Service\AuthorService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -11,33 +12,58 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class AuthorController extends AbstractController
 {
-    public $authorService;
+    public AuthorService $authorService;
+    public int $status;
+    public string $message;
+
     public function __construct(AuthorService $authorService)
     {
         $this->authorService = $authorService;
+        $this->status = Response::HTTP_OK;
+        $this->message = Response::$statusTexts[Response::HTTP_OK];
     }
 
     /**
      * @Route("/create")
-     * @return Response
+     * @return JsonResponse
      */
-    public function create(): Response
+    public function create(): JsonResponse
     {
-        $id = $this->authorService->create();
-        return new Response(
-            '<html><body>CREATE '.$id.'</body></html>'
-        );
+        try {
+            $id = $this->authorService->create();
+        } catch (\Throwable $throwable) {
+            $id = null;
+            $this->status = $throwable->getCode();
+            $this->message = $throwable->getMessage();
+        }
+        return new JsonResponse([
+            'status' => $this->status,
+            'message' => $this->message,
+            'data' => [
+                'id' => $id
+            ]
+        ]);
     }
 
     /**
      * @Route("/search")
-     * @return Response
+     * @return JsonResponse
      */
-    public function search(): Response
+    public function search(): JsonResponse
     {
-        $result = $this->authorService->search();
-        return new Response(
-            '<html><body><pre>'.var_dump($result).'<pre></body></html>'
-        );
+        try {
+            $author = $this->authorService->search();
+        } catch (\Throwable $throwable) {
+            $author = [];
+            $this->status = $throwable->getCode();
+            $this->message = $throwable->getMessage();
+        }
+        return new JsonResponse([
+            'status' => $this->status,
+            'message' => $this->message,
+            'data' => [
+                'author' => $author
+            ]
+        ]);
     }
 }

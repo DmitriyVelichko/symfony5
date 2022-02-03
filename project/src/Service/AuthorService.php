@@ -3,24 +3,21 @@
 namespace App\Service;
 
 use App\Repository\AuthorRepository;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class AuthorService
 {
-    public $authorRepository;
-    public $request;
-    public $validator;
+    public AuthorRepository $authorRepository;
+    public Request $request;
 
     public function __construct(
         AuthorRepository $authorRepository,
-        RequestStack $requestStack,
-        ValidatorInterface $validator
+        RequestStack $requestStack
     )
     {
         $this->authorRepository = $authorRepository;
         $this->request = $requestStack->getCurrentRequest();
-        $this->validator = $validator;
     }
 
     /**

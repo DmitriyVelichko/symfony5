@@ -9,6 +9,8 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity(repositoryClass=BookRepository::class)
+ * @ORM\Table(name="book")
+ * @ORM\HasLifecycleCallbacks()
  */
 class Book
 {
@@ -25,18 +27,18 @@ class Book
     private $name;
 
     /**
-     * @ORM\ManyToMany(targetEntity=Author::class, inversedBy="books")
-     */
-    private $author_id;
-
-    /**
      * @ORM\Column(type="string", length=255)
      */
     private $lang;
 
+    /**
+     * @ORM\ManyToMany(targetEntity="Author", inversedBy="books")
+     */
+    private $authors;
+
     public function __construct()
     {
-        $this->author_id = new ArrayCollection();
+        $this->authors = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -56,30 +58,6 @@ class Book
         return $this;
     }
 
-    /**
-     * @return Collection|Author[]
-     */
-    public function getAuthorId(): Collection
-    {
-        return $this->author_id;
-    }
-
-    public function addAuthorId(Author $authorId): self
-    {
-        if (!$this->author_id->contains($authorId)) {
-            $this->author_id[] = $authorId;
-        }
-
-        return $this;
-    }
-
-    public function removeAuthorId(Author $authorId): self
-    {
-        $this->author_id->removeElement($authorId);
-
-        return $this;
-    }
-
     public function getLang(): ?string
     {
         return $this->lang;
@@ -89,6 +67,28 @@ class Book
     {
         $this->lang = $lang;
 
+        return $this;
+    }
+
+    /**
+     * @return Collection|Author[]
+     */
+    public function getAuthors(): Collection
+    {
+        return $this->authors;
+    }
+
+    public function addAuthor(Author $author): self
+    {
+        if (!$this->authors->contains($author)) {
+            $this->authors[] = $author;
+        }
+        return $this;
+    }
+
+    public function removeAuthor(Author $author): self
+    {
+        $this->authors->removeElement($author);
         return $this;
     }
 }

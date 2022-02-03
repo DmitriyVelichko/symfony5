@@ -42,6 +42,11 @@ RUN echo "INSTALL COMPOSER" && \
     php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
     php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/install-php-extensions && sync && \
+    install-php-extensions http
+
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ADD ./php.ini /usr/local/etc/php/custom.d/php.ini

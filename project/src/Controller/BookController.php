@@ -3,41 +3,68 @@ namespace App\Controller;
 
 use App\Service\BookService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
- * @Route("/book")
+ * @Route("/{!_locale}/book", requirements={"_locale": "en|ru"}, name="book_", defaults={"_locale": "ru"})
  */
 class BookController extends AbstractController
 {
-    public $bookService;
+    public BookService $bookService;
+    public int $status;
+    public string $message;
+
     public function __construct(BookService $bookService)
     {
         $this->bookService = $bookService;
+        $this->status = Response::HTTP_OK;
+        $this->message = Response::$statusTexts[Response::HTTP_OK];
     }
 
     /**
-     * @Route("/create")
-     * @return Response
+     * @Route("/create", name="create")
+     * @return JsonResponse
      */
-    public function create(): Response
+    public function create(): JsonResponse
     {
-        $id = $this->bookService->create();
-        return new Response(
-            '<html><body>CREATE '.$id.'</body></html>'
-        );
+        try {
+            $id = $this->bookService->create();
+        } catch (\Throwable $throwable) {
+            $id = null;
+            $this->status = $throwable->getCode();
+            $this->message = $throwable->getMessage();
+        }
+        return new JsonResponse([
+            'status' => $this->status,
+            'message' => $this->message,
+            'data' => [
+                'id' => $id
+            ]
+        ]);
     }
 
     /**
-     * @Route("/search")
-     * @return Response
+     * @Route("/{id}", name="search", defaults={"id"="search"})
+     * @param $id
+     * @return JsonResponse
      */
-    public function search(): Response
+    public function search($id): JsonResponse
     {
-        $result = $this->bookService->search();
-        return new Response(
-            '<html><body><pre>'.var_dump($result).'<pre></body></html>'
-        );
+        try {
+            $book = $this->bookService->search($id);
+        } catch (\Throwable $throwable) {
+            $book = [];
+            $this->status = $throwable->getCode();
+            $this->message = $throwable->getMessage();
+        }
+        return new JsonResponse([
+            'status' => $this->status,
+            'message' => $this->message,
+            'data' => [
+                'book' => $book
+            ]
+        ]);
     }
 }

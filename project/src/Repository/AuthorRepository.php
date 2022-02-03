@@ -7,6 +7,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
@@ -17,7 +18,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  */
 class AuthorRepository extends ServiceEntityRepository
 {
-    private $validator;
+    private ValidatorInterface $validator;
+
     public function __construct(
         ManagerRegistry $registry,
         ValidatorInterface $validator
@@ -42,9 +44,13 @@ class AuthorRepository extends ServiceEntityRepository
 
         $errors = $this->validator->validate($author);
         if (count($errors) > 0) {
-            throw new BadRequestException('Ошибка валидации полей');
+            throw new BadRequestException('Ошибка валидации полей', Response::HTTP_BAD_REQUEST);
         }
-        $entityManager->flush();
+        try {
+            $entityManager->flush();
+        } catch (\Throwable $throwable) {
+            throw new BadRequestException('Ошибка при обновлении', Response::HTTP_BAD_REQUEST);
+        }
 
         return $author->getId();
     }
@@ -64,35 +70,11 @@ class AuthorRepository extends ServiceEntityRepository
             $query->andWhere('a.name = :authorName')->setParameter('authorName', $data['name']);
         }
 
-        return $query->getQuery()->getResult(AbstractQuery::HYDRATE_ARRAY);
+        try {
+            $result = $query->getQuery()->getResult(AbstractQuery::HYDRATE_ARRAY);
+        } catch (\Throwable $throwable) {
+            throw new BadRequestException('Поиск завершён с ошибкой', Response::HTTP_BAD_REQUEST);
+        }
+        return $result;
     }
-
-    // /**
-    //  * @return Author[] Returns an array of Author objects
-    //  */
-    /*
-    public function findByExampleField($value)
-    {
-        return $this->createQueryBuilder('a')
-            ->andWhere('a.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('a.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-    */
-
-    /*
-    public function findOneBySomeField($value): ?Author
-    {
-        return $this->createQueryBuilder('a')
-            ->andWhere('a.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
-    }
-    */
 }

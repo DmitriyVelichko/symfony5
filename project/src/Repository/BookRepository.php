@@ -30,9 +30,10 @@ class BookRepository extends ServiceEntityRepository
 
     /**
      * @param array $data
+     * @param string $locale
      * @return int
      */
-    public function create(array $data): int
+    public function create(array $data, string $locale): int
     {
         $entityManager = $this->getEntityManager();
         $book = new Book();
@@ -42,11 +43,9 @@ class BookRepository extends ServiceEntityRepository
         }
         if(!empty($data['author'])) {
             $author = $entityManager->getRepository(Author::class)->findOneBy(['name' => (string)$data['author']]);
-            $book->addAuthorId($author);
+            $book->addAuthor($author);
         }
-        if(!empty($data['lang'])) {
-            $book->setLang((string)$data['lang']);
-        }
+        $book->setLang($locale);
         $entityManager->persist($book);
 
         $errors = $this->validator->validate($book);
@@ -65,15 +64,19 @@ class BookRepository extends ServiceEntityRepository
     public function search(array $data): array
     {
         $query = $this->createQueryBuilder('b');
-
+        $query->select([
+            'a.id as author_id',
+            'b.lang as book_lang',
+            'b.name as book_name',
+            'b.id as book_id',
+            'a.name as author_name'
+        ]);
+        $query->leftJoin('b.authors', 'a');
         if(!empty($data['id'])) {
             $query->andWhere('b.id = :bookId')->setParameter('bookId', $data['id']);
         }
         if(!empty($data['name'])) {
             $query->andWhere('b.name = :bookName')->setParameter('bookName', $data['name']);
-        }
-        if(!empty($data['author'])) {
-            $query->andWhere('b.author_id = :authorId')->setParameter('authorId', $data['author']);
         }
 
         return $query->getQuery()->getResult(AbstractQuery::HYDRATE_ARRAY);
